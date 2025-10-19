@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persona Chatbot Blender</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            border-bottom-right-radius: 5px;
+        }
+        .assistant-message {
+            align-self: flex-start;
+            background-color: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-bottom-left-radius: 5px;
+        }
+        .input-container {
+            padding: 15px;
+            border-top: 1px solid #e5e5ea;
+            display: flex;
+            gap: 10px;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e5e5ea;
+            border-radius: 20px;
+            outline: none;
+        }
+        .input-container button {
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .slider-container input {
+            width: 100%;
+        }
+        .weights-display {
+            margin-top: 20px;
+        }
+        .response-expander {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #000;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Persona Chatbot Blender</h1>
+            <p>Adjust the dials to blend different chatbot personalities and see the magic of semantic similarity at work!</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>Persona Dials</h3>
+                <p>Set the personality mix. The total will always be 100%.</p>
+                
+                <div class="slider-container">
+                    <label for="pirate-slider">Pirate: <span id="pirate-value">25</span>%</label>
+                    <input type="range" id="pirate-slider" min="0" max="100" value="25">
+                </div>
+                
+                <div class="slider-container">
+                    <label for="romance-slider">Romance: <span id="romance-value">25</span>%</label>
+                    <input type="range" id="romance-slider" min="0" max="100" value="25">
+                </div>
+                
+                <div class="slider-container">
+                    <label for="empathy-slider">Empathy: <span id="empathy-value">25</span>%</label>
+                    <input type="range" id="empathy-slider" min="0" max="100" value="25">
+                </div>
+                
+                <div class="slider-container">
+                    <label for="energy-slider">Energy: <span id="energy-value">25</span>%</label>
+                    <input type="range" id="energy-slider" min="0" max="100" value="25">
+                </div>
+                
+                <div class="weights-display">
+                    <h4>Current Blend:</h4>
+                    <div id="weights-display"></div>
+                </div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message assistant-message">
+                        Hello! I'm your persona chatbot blender. Adjust the dials in the sidebar and ask me anything to see how different personalities blend together!
+                    </div>
+                </div>
+                
+                <div class="input-container">
+                    <input type="text" id="user-input" placeholder="What would you like to say?" />
+                    <button id="send-button">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const pirateSlider = document.getElementById('pirate-slider');
+        const romanceSlider = document.getElementById('romance-slider');
+        const empathySlider = document.getElementById('empathy-slider');
+        const energySlider = document.getElementById('energy-slider');
+        const pirateValue = document.getElementById('pirate-value');
+        const romanceValue = document.getElementById('romance-value');
+        const empathyValue = document.getElementById('empathy-value');
+        const energyValue = document.getElementById('energy-value');
+        const weightsDisplay = document.getElementById('weights-display');
+
+        // Initialize slider values
+        let sliderValues = {
+            pirate: 25,
+            romance: 25,
+            empathy: 25,
+            energy: 25
+        };
+
+        // Update slider value displays
+        function updateSliderValues() {
+            pirateValue.textContent = pirateSlider.value;
+            romanceValue.textContent = romanceSlider.value;
+            empathyValue.textContent = empathySlider.value;
+            energyValue.textContent = energySlider.value;
+            
+            // Update normalized values
+            normalizeSliders();
+            updateWeightsDisplay();
+        }
+
+        // Normalize sliders to ensure total is 100%
+        function normalizeSliders() {
+            const total = parseInt(pirateSlider.value) + 
+                         parseInt(romanceSlider.value) + 
+                         parseInt(empathySlider.value) + 
+                         parseInt(energySlider.value);
+            
+            if (total === 0) {
+                // If all are zero, set them to equal values
+                const newVal = Math.floor(100 / 4);
+                pirateSlider.value = newVal;
+                romanceSlider.value = newVal;
+                empathySlider.value = newVal;
+                energySlider.value = 100 - 3 * newVal; // Adjust for rounding
+            } else {
+                // Calculate normalized values
+                const normPirate = Math.round((parseInt(pirateSlider.value) / total) * 100);
+                const normRomance = Math.round((parseInt(romanceSlider.value) / total) * 100);
+                const normEmpathy = Math.round((parseInt(empathySlider.value) / total) * 100);
+                const normEnergy = 100 - normPirate - normRomance - normEmpathy; // Adjust for rounding
+                
+                pirateSlider.value = normPirate;
+                romanceSlider.value = normRomance;
+                empathySlider.value = normEmpathy;
+                energySlider.value = normEnergy;
+            }
+            
+            // Update displays after normalization
+            pirateValue.textContent = pirateSlider.value;
+            romanceValue.textContent = romanceSlider.value;
+            empathyValue.textContent = empathySlider.value;
+            energyValue.textContent = energySlider.value;
+        }
+
+        // Update the weights display in the sidebar
+        function updateWeightsDisplay() {
+            weightsDisplay.innerHTML = `
+                <p><strong>Pirate:</strong> ${pirateSlider.value}%</p>
+                <p><strong>Romance:</strong> ${romanceSlider.value}%</p>
+                <p><strong>Empathy:</strong> ${empathySlider.value}%</p>
+                <p><strong>Energy:</strong> ${energySlider.value}%</p>
+            `;
+        }
+
+        // Add a message to the chat
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(role === 'user' ? 'user-message' : 'assistant-message');
+            messageDiv.textContent = content;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show loading message
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-message';
+            loadingDiv.classList.add('message', 'assistant-message', 'loading');
+            loadingDiv.innerHTML = '<span class="spinner"></span> Generating persona responses...';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingDiv;
+        }
+
+        // Update loading message
+        function updateLoadingMessage(message) {
+            const loadingDiv = document.getElementById('loading-message');
+            if (loadingDiv) {
+                loadingDiv.innerHTML = `<span class="spinner"></span> ${message}`;
+            }
+        }
+
+        // Simulate API call to generate responses
+        async function generateResponse(prompt) {
+            // Show loading indicator
+            const loadingDiv = showLoading();
+            
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Update loading state
+            updateLoadingMessage("Embedding and calculating the best blend...");
+            
+            // Simulate API delay for embedding calculation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Remove loading indicator
+            if (loadingDiv.parentNode) {
+                loadingDiv.parentNode.removeChild(loadingDiv);
+            }
+            
+            // Create a simulated response based on selected personas
+            const selectedPersonas = [];
+            if (parseInt(pirateSlider.value) > 0) selectedPersonas.push('Pirate');
+            if (parseInt(romanceSlider.value) > 0) selectedPersonas.push('Romance');
+            if (parseInt(empathySlider.value) > 0) selectedPersonas.push('Empathy');
+            if (parseInt(energySlider.value) > 0) selectedPersonas.push('Energy');
+            
+            let response = "Ahoy there, matey! Well, that be a fine question ye asked. ";
+            
+            if (selectedPersonas.includes('Romance')) {
+                response += "Me heart be full of love when I think on't. ";
+            }
+            if (selectedPersonas.includes('Empathy')) {
+                response += "I feel yer pain, dear friend. ";
+            }
+            if (selectedPersonas.includes('Energy')) {
+                response += "What an AMAZING question! I'm so excited to answer it! ";
+            }
+            
+            response += `I've blended me responses according to yer settings: ${pirateSlider.value}% Pirate, ${romanceSlider.value}% Romance, ${empathySlider.value}% Empathy, and ${energySlider.value}% Energy.`;
+            
+            // Add individual responses for comparison (simulated)
+            const individualResponses = {
+                'Pirate': `Arrr! Ye asked "${prompt}"? That be a question for the high seas!`,
+                'Romance': `My dearest, when ye say "${prompt}", me heart skips a beat with the beauty of yer words.`,
+                'Empathy': `I understand how ye feel about "${prompt}". I'm here for ye, me dear friend.`,
+                'Energy': `WOW! That's such an amazing question about "${prompt}"! I'm so excited to chat with ye!`
+            };
+            
+            return {
+                finalResponse: response,
+                individualResponses: individualResponses
+            };
+        }
+
+        // Handle sending a message
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage('user', message);
+            userInput.value = '';
+            
+            // Get responses from "API"
+            const responses = await generateResponse(message);
+            
+            // Add final response to chat
+            addMessage('assistant', responses.finalResponse);
+            
+            // Add individual responses for comparison
+            const expanderDiv = document.createElement('div');
+            expanderDiv.classList.add('response-expander');
+            expanderDiv.innerHTML = `
+                <details>
+                    <summary>See Individual Persona Responses</summary>
+                    ${Object.entries(responses.individualResponses).map(([persona, response]) => 
+                        `<p><strong>${persona} (${getSliderValue(persona)}%):</strong><br><em>${response}</em></p>`
+                    ).join('')}
+                </details>
+            `;
+            chatMessages.appendChild(expanderDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Helper to get slider value by persona name
+        function getSliderValue(persona) {
+            switch(persona.toLowerCase()) {
+                case 'pirate': return pirateSlider.value;
+                case 'romance': return romanceSlider.value;
+                case 'empathy': return empathySlider.value;
+                case 'energy': return energySlider.value;
+                default: return 0;
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Slider event listeners
+        pirateSlider.addEventListener('input', updateSliderValues);
+        romanceSlider.addEventListener('input', updateSliderValues);
+        empathySlider.addEventListener('input', updateSliderValues);
+        energySlider.addEventListener('input', updateSliderValues);
+
+        // Initialize weights display
+        updateWeightsDisplay();
+    </script>
+</body>
+</html>
